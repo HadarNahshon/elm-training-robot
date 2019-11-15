@@ -1,10 +1,13 @@
 module Robot exposing (main)
 
 import Browser
+import Browser.Events exposing (onKeyDown)
 import Html
 import Html.Attributes exposing (style)
+import Json.Decode
 import Keyboard
 import Maybe
+import String
 import Task
 
 
@@ -19,100 +22,61 @@ main =
 
 
 type Msg
-    = Tick Time.Posix
-    | SetTimeZone Time.Zone Time.Posix
+    = KeyPressed String
 
 
 type alias Model =
-    { time : Time.Posix
-    , zone : Time.Zone
+    { x : Int
+    , y : Int
+    , btt : String
     }
 
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Time.every 1000 Tick
+    onKeyDown <| Json.Decode.map KeyPressed <| Json.Decode.field "key" Json.Decode.string
 
 
 init : flags -> ( Model, Cmd Msg )
 init _ =
-    ( { time = Time.millisToPosix 0
-      , zone = Time.utc
-      }
-    , Task.perform identity <| Task.map2 SetTimeZone Time.here Time.now
+    ( { x = 10, y = 10, btt = "a" }
+    , Cmd.none
     )
 
 
-update : Msg -> Model -> ( Model, Cmd msg )
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Tick timePosix ->
-            ( { model | time = timePosix }
-            , Cmd.none
-            )
+        KeyPressed button ->
+            case button of
+                --- each key name is the character outputted, except for arrow keys: ArrowDown, ArrowUp... etc
+                "a" ->
+                    ( { model | x = model.x - 1, btt = button }, Cmd.none )
 
-        SetTimeZone zone posix ->
-            ( { model | time = posix, zone = zone }, Cmd.none )
+                "d" ->
+                    ( { model | x = model.x + 1, btt = button }, Cmd.none )
+
+                "w" ->
+                    ( { model | y = model.y - 1, btt = button }, Cmd.none )
+
+                "s" ->
+                    ( { model | y = model.y + 1, btt = button }, Cmd.none )
+
+                _ ->
+                    ( model, Cmd.none )
 
 
 view : Model -> Html.Html Msg
 view model =
-    let
-        millis : Int
-        millis =
-            modBy 1000 (millisLeft model)
-
-        secondsLeft : Int
-        secondsLeft =
-            millisLeft model // 1000
-
-        seconds : Int
-        seconds =
-            modBy 60 secondsLeft
-
-        minutesLeft : Int
-        minutesLeft =
-            secondsLeft // 60
-
-        minutes : Int
-        minutes =
-            modBy 60 minutesLeft
-
-        hoursLeft : Int
-        hoursLeft =
-            minutesLeft // 60
-
-        hours : Int
-        hours =
-            modBy 24 hoursLeft
-
-        daysLeft : Int
-        daysLeft =
-            hoursLeft // 24
-
-        days : Int
-        days =
-            modBy 7 daysLeft
-
-        weeksLeft : Int
-        weeksLeft =
-            daysLeft // 7
-    in
     Html.div []
-        [ Html.div [ style "color" (backgroundColor model seconds) ]
-            [ Html.text "Time until kickoff ~!"
+        [ Html.div
+            [ style "background-color" "blue"
+            , style "width" "50px"
+            , style "height" "50px"
+            , style "position" "absolute"
+            , style "top" <| (++) (String.fromInt model.y) "%"
+            , style "left" <| (++) (String.fromInt model.x) "%"
             ]
-        , Html.div []
-            [ Html.text <|
-                String.fromInt weeksLeft
-                    ++ " weeks "
-                    ++ String.fromInt days
-                    ++ " days "
-                    ++ String.fromInt hours
-                    ++ " hours "
-                    ++ String.fromInt minutes
-                    ++ " minutes "
-                    ++ String.fromInt seconds
-                    ++ " seconds"
+            [ Html.text model.btt
             ]
         ]
