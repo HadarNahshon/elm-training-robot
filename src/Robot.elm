@@ -5,10 +5,8 @@ import Browser.Events exposing (onKeyDown)
 import Html
 import Html.Attributes exposing (style)
 import Json.Decode
-import Keyboard
 import Maybe
 import String
-import Task
 
 
 main : Program () Model Msg
@@ -28,7 +26,6 @@ type Msg
 type alias Model =
     { x : Int
     , y : Int
-    , btt : String
     }
 
 
@@ -39,7 +36,9 @@ subscriptions _ =
 
 init : flags -> ( Model, Cmd Msg )
 init _ =
-    ( { x = 10, y = 10, btt = "a" }
+    ( { x = 10
+      , y = 10
+      }
     , Cmd.none
     )
 
@@ -48,19 +47,23 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         KeyPressed button ->
+            let
+                move action =
+                    ( { model | x = action model.x 1 }, Cmd.none )
+            in
             case button of
                 --- each key name is the character outputted, except for arrow keys: ArrowDown, ArrowUp... etc
                 "a" ->
-                    ( { model | x = model.x - 1, btt = button }, Cmd.none )
+                    move (-)
 
                 "d" ->
-                    ( { model | x = model.x + 1, btt = button }, Cmd.none )
+                    move (+)
 
                 "w" ->
-                    ( { model | y = model.y - 1, btt = button }, Cmd.none )
+                    move (-)
 
                 "s" ->
-                    ( { model | y = model.y + 1, btt = button }, Cmd.none )
+                    move (+)
 
                 _ ->
                     ( model, Cmd.none )
@@ -74,9 +77,8 @@ view model =
             , style "width" "50px"
             , style "height" "50px"
             , style "position" "absolute"
-            , style "top" <| (++) (String.fromInt model.y) "%"
-            , style "left" <| (++) (String.fromInt model.x) "%"
+            , style "top" <| String.fromInt model.y ++ "%"
+            , style "left" <| String.fromInt model.x ++ "%"
             ]
-            [ Html.text model.btt
-            ]
+            []
         ]
